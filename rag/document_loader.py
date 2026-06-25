@@ -80,12 +80,26 @@ class DocumentLoader:
             List of Document objects with page metadata.
         """
         try:
+            import re
             from PyPDF2 import PdfReader
             reader = PdfReader(str(file_path))
             documents: List[Document] = []
+            
+            # Detect typical TOC lines (dotted leaders, or numbered sections ending in a page number)
+            TOC_LINE_PATTERN = re.compile(r"(\.\s*\.\s*\.\s*\d+$|\b\d+(\.\d+)*\s+.*?\s+\d+$)")
+            
             for page_num, page in enumerate(reader.pages, start=1):
                 text = page.extract_text()
                 if text and text.strip():
+                    # TOC detection check
+                    lines = text.split("\n")
+                    matching_lines = [l for l in lines if TOC_LINE_PATTERN.search(l.strip())]
+                    ratio = len(matching_lines) / len(lines) if lines else 0
+                    
+                    if len(lines) > 5 and ratio > 0.25:
+                        logger.info(f"Skipping page {page_num} of {file_path.name} (TOC/Index page detected)")
+                        continue
+                    
                     chunks = self.text_splitter.split_text(text)
                     for chunk_idx, chunk in enumerate(chunks):
                         doc = Document(

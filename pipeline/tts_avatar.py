@@ -91,6 +91,16 @@ class AvatarGenerator:
             "Content-Type": "application/json",
         }
         truncated_text = text[:1500] if len(text) > 1500 else text
+        
+        voice_config = {
+            "type": "text",
+            "input_text": truncated_text,
+            "speed": 1.0,
+        }
+        # Only add voice_id if it is configured and not the default placeholder
+        if self.voice_id and not self.voice_id.startswith("your_"):
+            voice_config["voice_id"] = self.voice_id
+
         payload = {
             "video_inputs": [
                 {
@@ -99,12 +109,7 @@ class AvatarGenerator:
                         "avatar_id": self.avatar_id,
                         "avatar_style": "normal",
                     },
-                    "voice": {
-                        "type": "text",
-                        "input_text": truncated_text,
-                        "voice_id": self.voice_id,
-                        "speed": 1.0,
-                    },
+                    "voice": voice_config,
                     "background": {
                         "type": "color",
                         "value": "#1a1a2e",
@@ -115,7 +120,7 @@ class AvatarGenerator:
                 "width": 512,
                 "height": 512,
             },
-            "test": False,
+            "test": True,
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:

@@ -4,12 +4,16 @@ Generates educational tutor responses based on user queries,
 retrieved context, and conversation history.
 """
 import asyncio
+from pathlib import Path
 from typing import List, Dict, Optional, AsyncGenerator
 from groq import Groq, AsyncGroq
 from config.settings import get_settings
 from utils.logger import get_logger
 logger = get_logger(__name__)
-TUTOR_SYSTEM_PROMPT = """You are an expert AI tutor. Your role is to educate, explain, and guide the student clearly and patiently. Always base your answers on the provided context documents when relevant. If the context does not contain the answer, use your general knowledge but clearly state that you are doing so. Keep your responses concise, clear, and educational. Use examples and analogies where helpful. Never provide false information. Context from documents: {context}"""
+
+# Load system prompt from file
+TUTOR_SYSTEM_PROMPT = Path("prompts/system_prompt.txt").read_text(encoding="utf-8")
+
 TUTOR_SYSTEM_PROMPT_ARABIC = """تادنتسملا نم قايسلا .ةئطاخ تامولعم اًدبأ مدقت لا .ةدئافلا دنع تاهيبشتلاو ةلثملأا مدختسا .ةيميلعتو ةحضاوو ةزجوم كتاباجإ ىلع ظفاح .كلذ حضو نكلو ةماعلا كتفرعم مدختسا ،ةباجلإا ىلع قايسلا يوتحي مل اذإ .ءاضتقلاا دنع ةمدقملا قايسلا تادنتسم ىلع ءًانب ةباجلإاب اًمئاد مق .ربصو حوضوب بلاطلا هيجوتو حرشلاو ميلعتلا وه كرود .ريبخ يعانطصا ءاكذ ملعم تنأ: {context}"""
 SUMMARIZATION_PROMPT = """Summarize the following conversation history into a brief, coherent summary that captures the key topics discussed and any important context needed for continuing the conversation. Keep it under 200 words.
 Conversation:
@@ -105,7 +109,8 @@ class LLMService:
                     yield chunk.choices[0].delta.content
         except Exception as e:
             logger.error(f"LLM streaming failed: {e}")
-            yield f"I apologize, but I encountered an error generating the response. Please try again."
+            from pipeline.orchestrator import LLMError
+            raise LLMError(f"LLM failed, cannot generate response: {str(e)}") from e
     async def summarize_history(
         self, conversation_history: List[Dict[str, str]]
     ) -> str:

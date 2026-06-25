@@ -29,19 +29,18 @@ env/
 .idea/
 *.swp
 *.swo
-# Vector Store
-vector_store/
+# Vector Store (keep dir, ignore contents)
+vector_store/*
+!vector_store/.gitkeep
 # Logs
 logs/
 *.log
 # OS
 .DS_Store
 Thumbs.db
-# Uploaded documents (keep sample)
-docs/*.pdf
-docs/*.txt
-docs/*.md
-!docs/sample.pdf
+# Documents (keep dir, ignore contents)
+docs/*
+!docs/.gitkeep
 # Audio files
 *.wav
 *.mp3
@@ -50,9 +49,20 @@ docs/*.md
 # Video files
 *.mp4
 *.webm
+# Project data
+data/
+
+# Generated project directory
+fullproject/
+
+# UV lock file
+uv.lock
+.uv/
+
 # Cache
 .cache/
 response_cache/
+
 # Node.js dependencies
 node_modules/
 package-lock.json

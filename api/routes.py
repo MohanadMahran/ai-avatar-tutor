@@ -10,7 +10,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from fastapi.responses import StreamingResponse
 import json
 from config.settings import get_settings
-from pipeline.orchestrator import PipelineOrchestrator
+from pipeline.orchestrator import PipelineOrchestrator, STTError, LLMError, AvatarError
 from pipeline.rag import RAGPipeline
 from api.schemas import (
     InteractResponse,
@@ -78,6 +78,9 @@ async def interact(
         )
     except HTTPException:
         raise
+    except (STTError, LLMError, AvatarError) as e:
+        logger.error(f"Pipeline component error in interact: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         logger.error(f"Interaction endpoint error: {e}")
         raise HTTPException(status_code=500, detail=f"Pipeline processing failed: {str(e)}")
@@ -106,6 +109,9 @@ async def interact_text(request: TextInteractRequest) -> InteractResponse:
             sources=result.get("sources", []),
             timing=result.get("timing", {}),
         )
+    except (STTError, LLMError, AvatarError) as e:
+        logger.error(f"Pipeline component error in interact-text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         logger.error(f"Text interaction error: {e}")
         raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
@@ -127,12 +133,17 @@ async def interact_stream(
             raise HTTPException(status_code=400, detail="Empty audio file.")
         orchestrator = get_orchestrator()
         # Transcribe
-        transcription = await orchestrator.stt.transcribe_audio(
-            audio_data, filename=audio.filename or "audio.webm"
-        )
-        if not transcription.strip():
+        try:
+            transcription = await orchestrator.stt.transcribe_audio(
+                audio_data, filename=audio.filename or "audio.webm"
+            )
+            if not transcription.strip():
+                raise STTError("STT failed: Transcription returned empty text.")
+        except Exception as e:
+            logger.error(f"STT failed in streaming request: {e}")
+            error_msg = str(e) if isinstance(e, STTError) else f"STT failed: {str(e)}"
             async def empty_stream():
-                yield f"data: {json.dumps({'type': 'error', 'content': 'Could not transcribe audio.'})}\n\n"
+                yield f"data: {json.dumps({'type': 'error', 'content': error_msg})}\n\n"
             return StreamingResponse(empty_stream(), media_type="text/event-stream")
         # RAG retrieval
         rag_result = orchestrator.rag.retrieve_context(transcription)
@@ -146,14 +157,22 @@ async def interact_stream(
             yield f"data: {json.dumps({'type': 'metadata', 'content': '', 'metadata': {'confidence': rag_result.get('confidence', 0.0), 'sources': rag_result.get('sources', []), 'language': language}})}\n\n"
             # Stream LLM response
             full_response = ""
-            async for token in orchestrator.llm.generate_response_stream(
-                query=transcription,
-                context=context,
-                conversation_history=orchestrator.conversation_history,
-                language=language,
-            ):
-                full_response += token
-                yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+            try:
+                async for token in orchestrator.llm.generate_response_stream(
+                    query=transcription,
+                    context=context,
+                    conversation_history=orchestrator.conversation_history,
+                    language=language,
+                ):
+                    full_response += token
+                    yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+                if not full_response.strip():
+                    raise LLMError("LLM failed, cannot generate response")
+            except Exception as e:
+                logger.error(f"LLM streaming failed during execution: {e}")
+                error_msg = str(e) if isinstance(e, LLMError) else f"LLM failed, cannot generate response: {str(e)}"
+                yield f"data: {json.dumps({'type': 'error', 'content': error_msg})}\n\n"
+                return
             # Update conversation history
             orchestrator.conversation_history = orchestrator.llm.manage_conversation_history(
                 orchestrator.conversation_history, transcription, full_response
@@ -164,10 +183,15 @@ async def interact_stream(
             if orchestrator.settings.heygen_api_key:
                 try:
                     avatar_result = await orchestrator.avatar.generate_avatar_video(full_response)
+                    if avatar_result.get("status") != "success":
+                        raise AvatarError(f"Heygen failed: {avatar_result.get('error', 'Unknown avatar generation error')}")
                     if avatar_result.get("video_url"):
                         yield f"data: {json.dumps({'type': 'video', 'content': avatar_result['video_url']})}\n\n"
                 except Exception as e:
-                    logger.warning(f"Avatar generation failed during stream: {e}")
+                    logger.error(f"Avatar generation failed during stream: {e}")
+                    error_msg = str(e) if isinstance(e, AvatarError) else f"Heygen failed: {str(e)}"
+                    yield f"data: {json.dumps({'type': 'error', 'content': error_msg})}\n\n"
+                    return
             yield f"data: {json.dumps({'type': 'done', 'content': ''})}\n\n"
         return StreamingResponse(stream_generator(), media_type="text/event-stream")
     except HTTPException:

@@ -560,13 +560,13 @@ function updateStatus(text, state) {
     textEl.textContent = text;
     switch (state) {
         case 'ready':
-            dot.style.background = 'var(--success)';
+            dot.style.backgroundColor = 'var(--success)';
             break;
         case 'recording':
-            dot.style.background = 'var(--error)';
+            dot.style.backgroundColor = 'var(--error)';
             break;
         case 'processing':
-            dot.style.background = 'var(--warning)';
+            dot.style.backgroundColor = 'var(--warning)';
             break;
     }
 }
@@ -591,4 +591,30 @@ async function checkHealth() {
     } catch (error) {
         updateStatus('Offline', 'processing');
     }
+}
+
+// Export functions for Jest unit testing in Node context
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        state,
+        elements,
+        initializeRecording,
+        initializeUpload,
+        initializeEventListeners,
+        startRecording,
+        stopRecording,
+        processRecording,
+        processWithStreaming,
+        uploadFiles,
+        loadDocumentList,
+        deleteDocument,
+        clearConversation,
+        showPipelineStatus,
+        setActiveStep,
+        resetSteps,
+        updateStatus,
+        updateConfidence,
+        showError,
+        checkHealth
+    };
 }

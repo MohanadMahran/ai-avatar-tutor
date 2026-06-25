@@ -54,7 +54,9 @@ class SpeechToText:
         files = {
             "file": (filename, audio_data, content_type),
         }
-        data = {}
+        data = {
+            "model_id": "scribe_v1"
+        }
         if language:
             data["language"] = language
         max_retries = 3

@@ -15,6 +15,21 @@ from pipeline.tts_avatar import AvatarGenerator
 from utils.logger import get_logger
 from utils.helpers import detect_language
 logger = get_logger(__name__)
+class STTError(Exception):
+    """Exception raised when Speech-to-Text conversion fails."""
+    pass
+
+
+class LLMError(Exception):
+    """Exception raised when LLM generation fails."""
+    pass
+
+
+class AvatarError(Exception):
+    """Exception raised when HeyGen avatar video generation fails."""
+    pass
+
+
 class ResponseCache:
     """Simple in-memory cache for query responses."""
     def __init__(self, ttl_seconds: int = 3600) -> None:
@@ -98,12 +113,10 @@ class PipelineOrchestrator:
             logger.info(f"STT completed in {timing['stt']}s: '{transcription[:60]}...'")
         except Exception as e:
             logger.error(f"STT failed: {e}")
-            result["response_text"] = "I couldn't understand the audio. Please try speaking again."
-            timing["stt"] = round(time.time() - step_start, 2)
-            return result
+            raise STTError("STT failed: I couldn't understand the audio. Please try speaking again.") from e
         if not transcription.strip():
-            result["response_text"] = "I didn't catch anything. Could you please speak again?"
-            return result
+            logger.error("STT returned empty transcription.")
+            raise STTError("STT failed: I didn't catch anything. Could you please speak again?")
         # Step 2: Language Detection
         language = detect_language(transcription)
         result["language"] = language
@@ -142,6 +155,8 @@ class PipelineOrchestrator:
                 conversation_history=self.conversation_history,
                 language=language,
             )
+            if not response_text or not response_text.strip():
+                raise LLMError("LLM failed, cannot generate response")
             result["response_text"] = response_text
             timing["llm"] = round(time.time() - step_start, 2)
             logger.info(f"LLM response generated in {timing['llm']}s")
@@ -153,23 +168,26 @@ class PipelineOrchestrator:
             )
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
-            result["response_text"] = "I'm having trouble generating a response right now. Please try again."
             timing["llm"] = round(time.time() - step_start, 2)
-            return result
-        # Step 6: Avatar Video Generation (async, non-blocking)
+            if isinstance(e, LLMError):
+                raise
+            raise LLMError(f"LLM failed, cannot generate response: {str(e)}") from e
+        # Step 6: Avatar Video Generation
         if generate_video and self.settings.heygen_api_key:
             step_start = time.time()
             try:
                 avatar_result = await self.avatar.generate_avatar_video(response_text)
+                if avatar_result.get("status") != "success":
+                    raise AvatarError(f"Heygen failed: {avatar_result.get('error', 'Unknown avatar generation error')}")
                 result["video_url"] = avatar_result.get("video_url")
                 timing["avatar"] = round(time.time() - step_start, 2)
-                if avatar_result["status"] == "success":
-                    logger.info(f"Avatar video generated in {timing['avatar']}s")
-                else:
-                    logger.warning(f"Avatar generation issue: {avatar_result.get('error')}")
+                logger.info(f"Avatar video generated in {timing['avatar']}s")
             except Exception as e:
-                logger.error(f"Avatar generation failed (non-fatal): {e}")
+                logger.error(f"Avatar generation failed: {e}")
                 timing["avatar"] = round(time.time() - step_start, 2)
+                if isinstance(e, AvatarError):
+                    raise
+                raise AvatarError(f"Heygen failed: {str(e)}") from e
         else:
             timing["avatar"] = 0.0
         # Cache the result
@@ -226,6 +244,8 @@ class PipelineOrchestrator:
                 conversation_history=self.conversation_history,
                 language=result["language"],
             )
+            if not response_text or not response_text.strip():
+                raise LLMError("LLM failed, cannot generate response")
             result["response_text"] = response_text
             timing["llm"] = round(time.time() - step_start, 2)
             self.conversation_history = self.llm.manage_conversation_history(
@@ -233,19 +253,25 @@ class PipelineOrchestrator:
             )
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
-            result["response_text"] = "I'm having trouble generating a response. Please try again."
             timing["llm"] = round(time.time() - step_start, 2)
-            return result
+            if isinstance(e, LLMError):
+                raise
+            raise LLMError(f"LLM failed, cannot generate response: {str(e)}") from e
         # Avatar Generation
         if generate_video and self.settings.heygen_api_key:
             step_start = time.time()
             try:
                 avatar_result = await self.avatar.generate_avatar_video(response_text)
+                if avatar_result.get("status") != "success":
+                    raise AvatarError(f"Heygen failed: {avatar_result.get('error', 'Unknown avatar generation error')}")
                 result["video_url"] = avatar_result.get("video_url")
                 timing["avatar"] = round(time.time() - step_start, 2)
             except Exception as e:
                 logger.error(f"Avatar generation failed: {e}")
                 timing["avatar"] = round(time.time() - step_start, 2)
+                if isinstance(e, AvatarError):
+                    raise
+                raise AvatarError(f"Heygen failed: {str(e)}") from e
         else:
             timing["avatar"] = 0.0
         timing["total"] = round(sum(timing.values()), 2)
