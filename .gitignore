@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+# Virtual Environment
+venv/
+env/
+.venv/
+.env
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+# Vector Store
+vector_store/
+# Logs
+logs/
+*.log
+# OS
+.DS_Store
+Thumbs.db
+# Uploaded documents (keep sample)
+docs/*.pdf
+docs/*.txt
+docs/*.md
+!docs/sample.pdf
+# Audio files
+*.wav
+*.mp3
+*.webm
+*.ogg
+# Video files
+*.mp4
+*.webm
+# Cache
+.cache/
+response_cache/
+# Node.js dependencies
+node_modules/
+package-lock.json

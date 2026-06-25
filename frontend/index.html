@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Avatar Tutor</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title"> AI Avatar Tutor</h1>
+                <div class="header-actions">
+                    <button id="clearConversationBtn" class="btn btn-secondary" title="Clear Conversation">
+                         Clear Chat
+                    </button>
+                    <div class="status-indicator" id="statusIndicator">
+                        <span class="status-dot"></span>
+                        <span class="status-text">Ready</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Chat -->
+            <section class="chat-panel">
+                <div class="panel-header">
+                    <h2>[Kommentar] Conversation</h2>
+                    <span class="confidence-badge" id="confidenceBadge" style="display:none;">
+                        [Diagramm] <span id="confidenceScore">0%</span> grounded
+                    </span>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="welcome-icon"></div>
+                        <h3>Welcome to AI Avatar Tutor!</h3>
+                        <p>Upload study documents and ask questions using your voice. I'll respond with text and a talking avatar video.</p>
+                        <p class="hint">Press and hold the microphone button to speak.</p>
+                    </div>
+                </div>
+                <!-- Audio Visualizer -->
+                <div class="audio-visualizer" id="audioVisualizer" style="display:none;">
+                    <canvas id="audioCanvas" width="300" height="40"></canvas>
+                </div>
+                <!-- Recording Controls -->
+                <div class="input-controls">
+                    <button id="recordBtn" class="record-btn" title="Press and hold to record">
+                        <span class="record-icon"></span>
+                        <span class="record-text">Hold to Speak</span>
+                    </button>
+                    <div class="recording-indicator" id="recordingIndicator" style="display:none;">
+                        <span class="pulse-dot"></span>
+                        <span>Recording...</span>
+                    </div>
+                </div>
+                <!-- Pipeline Status -->
+                <div class="pipeline-status" id="pipelineStatus" style="display:none;">
+                    <div class="status-steps">
+                        <div class="step" id="stepTranscribe">
+                            <span class="step-icon">[Notiz]</span>
+                            <span class="step-label">Transcribing</span>
+                        </div>
+                        <div class="step" id="stepThinking">
+                            <span class="step-icon"></span>
+                            <span class="step-label">Thinking</span>
+                        </div>
+                        <div class="step" id="stepAvatar">
+                            <span class="step-icon"></span>
+                            <span class="step-label">Generating Avatar</span>
+                        </div>
+                    </div>
+                    <div class="loading-bar">
+                        <div class="loading-bar-fill" id="loadingBarFill"></div>
+                    </div>
+                </div>
+            </section>
+            <!-- Right Panel: Avatar & Documents -->
+            <aside class="side-panel">
+                <!-- Avatar Video Player -->
+                <div class="avatar-panel">
+                    <div class="panel-header">
+                        <h2> Avatar Tutor</h2>
+                    </div>
+                    <div class="avatar-container" id="avatarContainer">
+                        <div class="avatar-placeholder" id="avatarPlaceholder">
+                            <div class="avatar-icon"></div>
+                            <p>Avatar video will appear here</p>
+                        </div>
+                        <video id="avatarVideo" class="avatar-video" controls style="display:none;">
+                            Your browser does not support video playback.
+                        </video>
+                    </div>
+                </div>
+                <!-- Document Management -->
+                <div class="docs-panel">
+                    <div class="panel-header">
+                        <h2> Documents</h2>
+                        <button id="refreshDocsBtn" class="btn btn-small" title="Refresh document list"></button>
+                    </div>
+                    <!-- Upload Area -->
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <span class="upload-icon">[Ordner]</span>
+                            <p>Drag & drop files here or click to browse</p>
+                            <p class="upload-hint">Supports PDF, TXT, MD</p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md" style="display:none;">
+                    </div>
+                    <!-- Upload Progress -->
+                    <div class="upload-progress" id="uploadProgress" style="display:none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="uploadProgressFill"></div>
+                        </div>
+                        <span class="progress-text" id="uploadProgressText">Uploading...</span>
+                    </div>
+                    <!-- Document List -->
+                    <div class="doc-list" id="docList">
+                        <p class="no-docs">No documents indexed yet.</p>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

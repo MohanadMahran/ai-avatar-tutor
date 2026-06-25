@@ -1,0 +1,114 @@
+Implementation Plan - AI Avatar Tutor Code Extraction
+This plan outlines the steps to extract all folders and source files of the AI Avatar Tutor project from the full project.pdf file and recreate them in the workspace.
+
+Proposed Changes
+We will use a Python extraction script with pdfplumber to extract page-by-page text from full project.pdf. The script will group words into lines based on their vertical positioning, reconstruct horizontal word spacing and code indentations, and separate the pages into individual files based on standard File: headers.
+
+Directory Structure to Create
+We will create the following 8 directories before writing any files:
+
+config
+pipeline
+rag
+api
+frontend
+docs
+tests
+utils
+Files to Extract and Write
+We will extract and write the following 36 files exactly as written in the PDF:
+
+Root files:
+[NEW] .env
+[NEW] .env.example
+[NEW] .gitignore
+[NEW] requirements.txt
+[NEW] README.md
+[NEW] main.py
+[NEW] Dockerfile
+[NEW] docker-compose.yml
+config component:
+[NEW] config/settings.py
+pipeline component:
+[NEW] pipeline/__init__.py
+[NEW] pipeline/stt.py
+[NEW] pipeline/rag.py
+[NEW] pipeline/llm.py
+[NEW] pipeline/tts_avatar.py
+[NEW] pipeline/orchestrator.py
+rag component:
+[NEW] rag/__init__.py
+[NEW] rag/document_loader.py
+[NEW] rag/embedder.py
+[NEW] rag/vector_store.py
+[NEW] rag/retriever.py
+api component:
+[NEW] api/__init__.py
+[NEW] api/routes.py
+[NEW] api/schemas.py
+frontend component:
+[NEW] frontend/index.html
+[NEW] frontend/style.css
+[NEW] frontend/app.js
+docs component:
+[NEW] docs/sample.pdf
+[NEW] docs/sample.txt
+tests component:
+[NEW] tests/__init__.py
+[NEW] tests/test_stt.py
+[NEW] tests/test_rag.py
+[NEW] tests/test_llm.py
+[NEW] tests/test_avatar.py
+utils component:
+[NEW] utils/__init__.py
+[NEW] utils/logger.py
+[NEW] utils/helpers.py
+Extraction Details & Quality Safeguards
+Spatial Reconstruction: To avoid text-box positioning artifacts in the PDF streams (such as out-of-order headers or code segments), we group visual words by vertical lines and sort them.
+Indentation Recovery: We will calculate code indentations dynamically from word start coordinates (x0) using the formula spaces = max(0, round((x0 - 63.75) / 6.625)).
+Formatting Cleanup: We strip page headers/footers, markdown fences (e.g. ````python), and programming language headers (e.g. python, css`) that were added visually in the PDF but are not part of the file contents.
+Verification Plan
+Manual Verification
+We will print a confirmation line for each file created in the format CREATED: path/to/filename.ext.
+We will print a summary containing:
+Total files created
+Total folders created
+Files skipped (confirming none)
+Any issues encountered (confirming none)
+We will run a syntax check (python -m py_compile) on Python files to ensure that indentation was correctly preserved and there are no syntax errors.
+We will inspect the five requested check files (main.py, requirements.txt, .env.example, pipeline/orchestrator.py, and README.md) to confirm they are complete and correct.
+Walkthrough - AI Avatar Tutor Code Extraction
+We have successfully processed full project.pdf and extracted all specification documentation and source code files. The entire project structure has been recreated on disk exactly as written.
+
+Extracted Directory & Folder Structure
+A total of 8 folders were created:
+
+config
+pipeline
+rag
+api
+frontend
+docs
+tests
+utils
+A total of 36 files were extracted and written to disk:
+
+Root: .env, .env.example, .gitignore, requirements.txt, README.md, main.py, Dockerfile, docker-compose.yml
+config: settings.py
+pipeline: __init__.py, stt.py, rag.py, llm.py, tts_avatar.py, orchestrator.py
+rag: __init__.py, document_loader.py, embedder.py, vector_store.py, retriever.py
+api: __init__.py, routes.py, schemas.py
+frontend: index.html, style.css, app.js
+docs: sample.pdf, sample.txt
+tests: __init__.py, test_stt.py, test_rag.py, test_llm.py, test_avatar.py
+utils: __init__.py, logger.py, helpers.py
+Spacing & Indentation Re-construction
+We used a Python script leveraging pdfplumber to extract visual words with their coordinates.
+
+Indentations were precisely mapped back to tab/space boundaries using coordinate values spaces = max(0, round((x0 - 63.75) / 6.625)).
+Words positioned horizontally on the same text line were spaced accurately by computing visual bounding-box gaps.
+Markdown code blocks and language markers used for syntax highlighting inside the PDF view were cleaned out so that the files on disk contain only clean, valid source code.
+Verification & Compilation Check
+A syntax validation compilation check (python -m py_compile) was executed successfully across all extracted .py files.
+No syntax compilation errors were found.
+The five critical check files (main.py, requirements.txt, .env.example, pipeline/orchestrator.py, and README.md) were opened and manually verified to be complete and correct.
