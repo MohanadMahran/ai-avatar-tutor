@@ -117,7 +117,6 @@ ai-avatar-tutor/
 ├── docker-compose.yml          # Docker Compose orchestration
 ├── requirements.txt            # Python dependencies (pip)
 ├── pyproject.toml              # Project metadata and dependencies (uv/pip)
-├── package.json                # Node.js config for Jest frontend tests
 ├── .env.example                # Environment variable template
 ├── .gitignore                  # Git ignore rules
 │
@@ -157,15 +156,6 @@ ai-avatar-tutor/
 │   ├── app.js                  # Application logic (recording, chat, uploads)
 │   └── style.css               # Dark theme stylesheet
 │
-├── tests/                      # Test suite
-│   ├── __init__.py
-│   ├── test_rag.py             # RAG subsystem tests
-│   ├── test_llm.py             # LLM service tests
-│   ├── test_orchestrator.py    # Orchestrator tests
-│   ├── test_stt.py             # STT tests
-│   ├── test_avatar.py          # Avatar generator tests
-│   └── test_app.test.js        # Frontend Jest tests
-│
 ├── docs/                       # Source documents for RAG (user-provided)
 ├── vector_store/               # FAISS index files (auto-generated)
 └── logs/                       # Application log files (auto-generated)
@@ -190,7 +180,7 @@ ai-avatar-tutor/
 | **Configuration** | [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/) 2.1.0 | Type-safe settings from `.env` files |
 | **HTTP Client** | [httpx](https://www.python-httpx.org) 0.25.2 | Async HTTP client for API calls |
 | **Frontend** | Vanilla HTML / CSS / JavaScript | No-framework, lightweight browser UI |
-| **Testing** | [pytest](https://docs.pytest.org) 7.4.3 + [Jest](https://jestjs.io) 29.x | Python + JavaScript test suites |
+
 | **Containerization** | [Docker](https://docker.com) + Docker Compose | Production-ready deployment |
 
 ---
@@ -662,27 +652,11 @@ sequenceDiagram
 | `pydantic` + `pydantic-settings` | Data validation and environment configuration |
 | `langdetect` | Language identification |
 | `torch` + `transformers` | PyTorch runtime for sentence-transformers |
-| `pytest` + `pytest-asyncio` | Async-capable Python test framework |
-| `jest` + `jest-environment-jsdom` | JavaScript frontend tests |
+
 
 ---
 
 ## 🧑‍💻 Development Guide
-
-### Running Tests
-
-**Python tests:**
-
-```bash
-pytest tests/ -v
-```
-
-**Frontend JavaScript tests:**
-
-```bash
-npm install
-npm test
-```
 
 ### Code Style
 
@@ -705,9 +679,8 @@ To support a new file format, add a `_load_<format>` method in `rag/document_loa
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes with tests
-4. Run the full test suite
-5. Submit a pull request
+3. Make your changes
+4. Submit a pull request
 
 ---
 
